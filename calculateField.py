@@ -78,12 +78,6 @@ def add_zebra_frame(ax, lw=2, crs="pcarree", zorder=None):
                     ],
                 )
 
-# executor = mp.Pool(N_WORKERS)
-        
-# with executor:
-#     list(tqdm(executor.imap(self.runForOneRow, listOfDfRows)))
-# Define the worker function as a global function
-# @jit
 def calculateMag(xspace, yspace, year, height, ifequator):
     equator = np.zeros((len(xspace)))
     inclination = np.zeros((len(yspace), len(xspace)))
@@ -94,9 +88,8 @@ def calculateMag(xspace, yspace, year, height, ifequator):
             igrfVals = pyIGRF.igrf_value(yspace[y], xspace[x], height, year)
             inclination[y,x] = igrfVals[1]
             magnt[y,x] = igrfVals[-1]
-
-    # decl, inc, hMag, xMag, yMag, zMag, fMAg
-
+            # se precisar, define o array para a varial antes do  "for"
+            # e adiciona no return
     
     if ifequator:
         for ii in range(inclination.shape[1]):
@@ -112,31 +105,23 @@ def calculateMag(xspace, yspace, year, height, ifequator):
             equator[ii] = yspace[idx]    
 
     return inclination, equator, magnt
+
+########################################################################
 # %%
-
-
-
 # define the x and y space for calculate the magnetic field
 # ising IGRF 13
-import time
-
-start = time.time()
-
 
 xspace = np.arange(-180,181,0.5)
 yspace = np.arange(-90,91, 0.5)
 incl, euator, magnt = calculateMag(xspace, yspace, 2018., 100, ifequator=True)
 
-end = time.time()
-print(end - start)
-#%%
+# Smooth the equator extraction
 euator = smooth(euator,10)
 # %%
 
 stations = pd.read_csv("amandastations.csv", sep=";")
 
 circ_size=500
-
 
 
 #######################################################################################
@@ -148,11 +133,6 @@ fig = plt.figure(figsize=(14,14))
 ax = plt.axes(projection=crs)
 # [-130,-20,-85,80]
 # 
-
-# ax.set_xticks((-130, -110, -90, -80))
-
-
-
 
 
 ax.coastlines()
