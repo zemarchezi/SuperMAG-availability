@@ -1,3 +1,4 @@
+
 #%%
 
 ## precisa instalar o basemap "pip install basemap" ou "conda install basemap"
@@ -14,16 +15,29 @@ import matplotlib.image as mpimg
 import matplotlib.patheffects as pe
 import pyIGRF
 import itertools
-
+import multiprocessing as mp
+from numba import jit
 
 # %%
+## Functions 
+
 def smooth(y, box_pts):
+    "smooth time series"
+
     box = np.ones(box_pts)/box_pts
     y_smooth = np.convolve(y, box, mode='same')
     return y_smooth
 
 
+
 def add_zebra_frame(ax, lw=2, crs="pcarree", zorder=None):
+
+    """
+    add the black and white frame in the plots.
+
+    copied from https://gist.github.com/scottstanie/dff0d597e636440fb60b3c5443f70cae
+    
+    """
 
     ax.spines["geo"].set_visible(False)
     left, right, bot, top = ax.get_extent()
@@ -64,40 +78,57 @@ def add_zebra_frame(ax, lw=2, crs="pcarree", zorder=None):
                     ],
                 )
 
-
-
-def calculateMag(xspace, yspace, year, height):
-    euator = np.zeros((len(xspace), 2))
+# executor = mp.Pool(N_WORKERS)
+        
+# with executor:
+#     list(tqdm(executor.imap(self.runForOneRow, listOfDfRows)))
+# Define the worker function as a global function
+# @jit
+def calculateMag(xspace, yspace, year, height, ifequator):
+    equator = np.zeros((len(xspace)))
     inclination = np.zeros((len(yspace), len(xspace)))
     magnt = np.zeros((len(yspace), len(xspace)))
+    # for x, y in itertools.product(range(len(xspace)), range(len(yspace))):
     for x in range(len(xspace)):
         for y in range(len(yspace)):
-            decl, inc, hMag, xMag, yMag, zMag, fMAg = pyIGRF.igrf_value(yspace[y], xspace[x], height, year)
-            inclination[y,x] = inc
-            magnt[y,x] = fMAg
+            igrfVals = pyIGRF.igrf_value(yspace[y], xspace[x], height, year)
+            inclination[y,x] = igrfVals[1]
+            magnt[y,x] = igrfVals[-1]
 
-
+    # decl, inc, hMag, xMag, yMag, zMag, fMAg
 
     
-    equator = []
-    for ii in range(inclination.shape[1]):
-        
-        temp = inclination[:,ii]
+    if ifequator:
+        for ii in range(inclination.shape[1]):
+            
+            temp = inclination[:,ii]
 
-        sts = np.where((temp > -1) & (temp < 1))
-        # print(sts)
+            sts = np.where((temp > -1) & (temp < 1))
+            # print(sts)
 
-        idx = sts[0][np.argmin(abs(temp[sts]))]
+            idx = sts[0][np.argmin(abs(temp[sts]))]
 
 
-        equator.append(yspace[idx])    
+            equator[ii] = yspace[idx]    
 
     return inclination, equator, magnt
 # %%
 
+
+
+# define the x and y space for calculate the magnetic field
+# ising IGRF 13
+import time
+
+start = time.time()
+
+
 xspace = np.arange(-180,181,0.5)
 yspace = np.arange(-90,91, 0.5)
-incl, euator, magnt = calculateMag(xspace, yspace, 2022., 100)
+incl, euator, magnt = calculateMag(xspace, yspace, 2018., 100, ifequator=True)
+
+end = time.time()
+print(end - start)
 #%%
 euator = smooth(euator,10)
 # %%
