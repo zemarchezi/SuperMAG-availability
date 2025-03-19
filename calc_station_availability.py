@@ -10,7 +10,7 @@ AUXDAT_PATH = "./auxData"
 OUTPUT_PATH = "./outputData"
 SUPERMAG_PATH = "/data/supermag/baseline-netcdf"# %%
 
-supermagStations = pd.read_csv(f"{AUXDAT_PATH}/20230525-19-09-supermag-stations.csv")
+supermagStations = pd.read_csv(f"{AUXDAT_PATH}/20250319-15-29-supermag-stations.csv")
 supermagStations.drop(['OPERATOR-NUM', 'OPERATORS', 'Op2', 'Op3', 'Op4', 'Op5'], axis=1, inplace=True)
 #%%
 stationDataYears = {}
